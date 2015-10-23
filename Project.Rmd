@@ -1,0 +1,48 @@
+---
+title: "Practical Machine Learning"
+output: html_document
+---
+
+Given that we are looking to predict a categorical variable, it was appropriate to use the random forest algorithm in order to predict the outcome.
+
+To simplify the model, I made the decision to remove any variables which I considered superfluous to the project. For example, I removed the timestamp and user name variables. 
+
+I also removed the variables which largely had NAs or blanks as these would add nothing to the model.
+
+
+```{r}
+set.seed(1333)
+library(caret)
+library(randomForest)
+training<-read.csv("pml-training.csv")
+xtraining<-training[,-c(1,2,3,4,5,6,7,12:36,50:59,69:83,87:101,103:112,125:139,141:150)]
+xtraining$classe<-as.factor(xtraining$classe)
+```
+
+After the removal of these variables, I was left with 53 variables on which to continue the model training.
+
+In terms of cross-validation, I employed the function trainControl in order to specify repeated K-fold cross-validation. The number of folds used was 10, and this was repeated 10 times. 
+
+```{r}
+fitControl<-trainControl(method="repeatedcv", number=10, repeats=10)
+```
+
+Using the function randomForest, I first ran the model using all variables. I included the importance option in the model. This allowed me to produce the following graph which listed the variable importance as described by a Random Forest.
+
+```{r}
+fit <- randomForest(classe ~ ., data=xtraining, importance = TRUE, trControl = fitControl)
+varImpPlot(fit)
+```
+
+Based on the above graph, I included the following variables in a new model: 
+yaw_belt + roll_belt + magnet_dumbbell_z + magnet_dumbbell_y + pitch_belt + pitch_forearm + gyros_arm_y
+
+```{r}
+fit2 <- randomForest(classe ~ yaw_belt + roll_belt + magnet_dumbbell_z + magnet_dumbbell_y + pitch_belt + pitch_forearm + gyros_arm_y,   data=xtraining, importance = TRUE, trControl = fitControl)
+```
+
+This model produces an out of bag (OOB) error rate of 1.05% as can be seen below.
+```{r}
+fit2
+```
+
